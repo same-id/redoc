@@ -141,7 +141,10 @@ export class SchemaModel {
     this.minItems = schema.minItems;
     this.maxItems = schema.maxItems;
 
-    this.protobufOneof = schema['x-protoOneof']
+    this.protobufOneof = schema['x-protoOneof'];
+    if (schema['x-writeOnly']) {
+      this.writeOnly = !!schema['x-writeOnly'];
+    }
 
     if (!!schema.nullable || schema['x-nullable']) {
       if (isArray(this.type) && !this.type.some(value => value === null || value === 'null')) {
