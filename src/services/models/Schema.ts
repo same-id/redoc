@@ -58,6 +58,7 @@ export class SchemaModel {
 
   oneOf?: SchemaModel[];
   oneOfType: string;
+  protobufOneof: string;
   discriminatorProp: string;
   @observable
   activeOneOf: number = 0;
@@ -70,6 +71,8 @@ export class SchemaModel {
   contentMediaType?: string;
   minItems?: number;
   maxItems?: number;
+
+  protobufOneofSelector?: string;
 
   /**
    * @param isChild if schema discriminator Child
@@ -139,6 +142,8 @@ export class SchemaModel {
     this.contentMediaType = schema.contentMediaType;
     this.minItems = schema.minItems;
     this.maxItems = schema.maxItems;
+
+    this.protobufOneof = schema['x-protoOneof']
 
     if (!!schema.nullable || schema['x-nullable']) {
       if (isArray(this.type) && !this.type.some(value => value === null || value === 'null')) {
