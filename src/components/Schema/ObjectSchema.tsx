@@ -89,6 +89,7 @@ export const ObjectSchema = observer(
               return (
                 <ProtobufOneof
                   items={field.items}
+                  no_siblings={filteredFields.length === 1}
                   isLast={isLast}
                   level={level}
                   skipReadOnly={skipReadOnly}
