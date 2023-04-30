@@ -19,21 +19,44 @@ export interface ObjectSchemaProps extends SchemaProps {
   };
 }
 
+const snakeToCamel = str =>
+  str
+    .toLowerCase()
+    .replace(/([-_][a-z])/g, group => group.toUpperCase().replace('-', '').replace('_', ''));
+
 class ProtobufOneofModel {
   items: FieldModel[];
 }
 
 export const ObjectSchema = observer(
   ({
-    schema: { fields = [], title },
+    schema: { fields = [], title, protobufOneofSelector: protobufOneofSelectorSchema },
     showTitle,
     discriminator,
     skipReadOnly,
     skipWriteOnly,
     level,
+    protobufOneofSelector,
   }: ObjectSchemaProps) => {
     const { expandSingleSchemaField, showObjectSchemaExamples, schemaExpansionLevel } =
       React.useContext(OptionsContext);
+
+    if (!protobufOneofSelector && protobufOneofSelectorSchema) {
+      protobufOneofSelector = protobufOneofSelectorSchema;
+      debugger;
+    }
+    let currentProtobufOneofSelector;
+    let restProtobufOneofSelector;
+    if (protobufOneofSelector) {
+      debugger;
+      const dot = protobufOneofSelector.indexOf('.');
+      if (dot != -1) {
+        currentProtobufOneofSelector = protobufOneofSelector.slice(0, dot);
+        restProtobufOneofSelector = protobufOneofSelector.slice(dot + 1);
+      } else {
+        currentProtobufOneofSelector = protobufOneofSelector;
+      }
+    }
 
     const filteredFields = React.useMemo(() => {
       const filteredSkipped =
@@ -48,6 +71,9 @@ export const ObjectSchema = observer(
           : fields;
       const filteredProtobufOneof: (FieldModel | ProtobufOneofModel)[] = [];
       outer: for (const item of filteredSkipped) {
+        if (item.schema.protobufOneofSelector) {
+          debugger;
+        }
         if (!item.schema.protobufOneof) {
           filteredProtobufOneof.push(item);
           continue;
@@ -57,6 +83,20 @@ export const ObjectSchema = observer(
             continue;
           }
           if (protobufOneof.items[0].schema.protobufOneof === item.schema.protobufOneof) {
+            if (currentProtobufOneofSelector) {
+              if (
+                snakeToCamel(protobufOneof.items[0].name) ==
+                snakeToCamel(currentProtobufOneofSelector)
+              ) {
+                // Skip field
+                continue outer;
+              }
+              if (snakeToCamel(item.name) == snakeToCamel(currentProtobufOneofSelector)) {
+                // Skip existing fields
+                protobufOneof.items = [item];
+                continue outer;
+              }
+            }
             protobufOneof.items.push(item);
             continue outer;
           }
@@ -66,7 +106,7 @@ export const ObjectSchema = observer(
         filteredProtobufOneof.push(newOneof);
       }
       return filteredProtobufOneof;
-    }, [skipReadOnly, skipWriteOnly, fields]);
+    }, [skipReadOnly, skipWriteOnly, fields, currentProtobufOneofSelector]);
 
     const expandByDefault =
       (expandSingleSchemaField && filteredFields.length === 1) || schemaExpansionLevel >= level!;
@@ -120,6 +160,11 @@ export const ObjectSchema = observer(
                 skipWriteOnly={skipWriteOnly}
                 showTitle={showTitle}
                 level={level}
+                protobufOneofSelector={
+                  snakeToCamel(field.name) === snakeToCamel(currentProtobufOneofSelector || '')
+                    ? restProtobufOneofSelector
+                    : undefined
+                }
               />
             );
           })}

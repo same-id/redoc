@@ -106,6 +106,7 @@ export class Field extends React.Component<FieldProps> {
                   skipWriteOnly={this.props.skipWriteOnly}
                   showTitle={this.props.showTitle}
                   level={this.props.level}
+                  protobufOneofSelector={this.props.protobufOneofSelector}
                 />
               </InnerPropertiesWrap>
             </PropertyCellWithInner>

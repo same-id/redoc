@@ -72,6 +72,8 @@ export class SchemaModel {
   minItems?: number;
   maxItems?: number;
 
+  protobufOneofSelector?: string;
+
   /**
    * @param isChild if schema discriminator Child
    * When true forces dereferencing in allOfs even if circular
@@ -141,9 +143,13 @@ export class SchemaModel {
     this.minItems = schema.minItems;
     this.maxItems = schema.maxItems;
 
-    this.protobufOneof = schema['x-protoOneof'];
+    this.protobufOneof = schema['x-protobufOneof'];
     if (schema['x-writeOnly']) {
       this.writeOnly = !!schema['x-writeOnly'];
+    }
+    if (schema['x-protobufOneofSelector']) {
+      this.protobufOneofSelector = schema['x-protobufOneofSelector'];
+      debugger;
     }
 
     if (!!schema.nullable || schema['x-nullable']) {

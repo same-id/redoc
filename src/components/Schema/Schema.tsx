@@ -17,6 +17,7 @@ export interface SchemaOptions {
   skipReadOnly?: boolean;
   skipWriteOnly?: boolean;
   level?: number;
+  protobufOneofSelector?: string;
 }
 
 export interface SchemaProps extends SchemaOptions {
