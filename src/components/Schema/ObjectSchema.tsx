@@ -43,12 +43,10 @@ export const ObjectSchema = observer(
 
     if (!protobufOneofSelector && protobufOneofSelectorSchema) {
       protobufOneofSelector = protobufOneofSelectorSchema;
-      debugger;
     }
     let currentProtobufOneofSelector;
     let restProtobufOneofSelector;
     if (protobufOneofSelector) {
-      debugger;
       const dot = protobufOneofSelector.indexOf('.');
       if (dot != -1) {
         currentProtobufOneofSelector = protobufOneofSelector.slice(0, dot);
@@ -71,9 +69,6 @@ export const ObjectSchema = observer(
           : fields;
       const filteredProtobufOneof: (FieldModel | ProtobufOneofModel)[] = [];
       outer: for (const item of filteredSkipped) {
-        if (item.schema.protobufOneofSelector) {
-          debugger;
-        }
         if (!item.schema.protobufOneof) {
           filteredProtobufOneof.push(item);
           continue;
@@ -123,13 +118,13 @@ export const ObjectSchema = observer(
               // However, some options might not be relevant:
               // * renderDiscriminatorSwitch - we don't expect OAS discrimintators in
               //   transcoded gRPC APIs
-              // * expandByDefault - the oneof should always be exapnded by default since the
+              // * expandByDefault - the oneof should always be expanded by default since the
               //   fields are actually in the same nesting in the schema
               // * showExamples?
               return (
                 <ProtobufOneof
                   items={field.items}
-                  no_siblings={filteredFields.length === 1}
+                  noSiblings={filteredFields.length === 1}
                   isLast={isLast}
                   level={level}
                   skipReadOnly={skipReadOnly}
