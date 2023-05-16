@@ -106,6 +106,8 @@ export const ObjectSchema = observer(
     const expandByDefault =
       (expandSingleSchemaField && filteredFields.length === 1) || schemaExpansionLevel >= level!;
 
+    let i = 0;
+
     return (
       <PropertiesTable>
         {showTitle && <PropertiesTableCaption>{title}</PropertiesTableCaption>}
@@ -116,13 +118,16 @@ export const ObjectSchema = observer(
               // Pass more options to ProtobufOneof so it can pass them later to
               // each field, like we can see below.
               // However, some options might not be relevant:
-              // * renderDiscriminatorSwitch - we don't expect OAS discrimintators in
+              // * renderDiscriminatorSwitch - we don't expect OAS discriminators in
               //   transcoded gRPC APIs
               // * expandByDefault - the oneof should always be expanded by default since the
               //   fields are actually in the same nesting in the schema
               // * showExamples?
+              // * The `key` prop must be supplied, but we don't have the original name of the oneof
+              //   field; so instead, we pass some integer.
               return (
                 <ProtobufOneof
+                  key={'pb-oneof' + ++i}
                   items={field.items}
                   noSiblings={filteredFields.length === 1}
                   isLast={isLast}
