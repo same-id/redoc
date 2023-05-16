@@ -96,6 +96,19 @@ export const PropertyNameCell = styled(PropertyCell)`
   ${extensionsHook('PropertyNameCell')};
 `;
 
+export const ProtobufOneofCell = styled(PropertyCell)`
+  vertical-align: top;
+  line-height: 20px;
+  white-space: nowrap;
+  font-size: 13px;
+
+  &.deprecated {
+    ${deprecatedCss};
+  }
+
+  ${extensionsHook('ProtobufOneofCell')};
+`;
+
 export const PropertyDetailsCell = styled.td`
   border-bottom: 1px solid #9fb4be;
   padding: 10px 0;
@@ -144,6 +157,10 @@ export const PropertyBullet = styled.span`
 `;
 
 export const InnerPropertiesWrap = styled.div`
+  padding: ${({ theme }) => theme.schema.nestingSpacing};
+`;
+
+export const ProtobufOneofInnerPropertiesWrap = styled.div`
   padding: ${({ theme }) => theme.schema.nestingSpacing};
 `;
 

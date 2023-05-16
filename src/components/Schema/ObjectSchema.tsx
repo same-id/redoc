@@ -1,7 +1,7 @@
 import { observer } from 'mobx-react';
 import * as React from 'react';
 
-import { SchemaModel } from '../../services/models';
+import { FieldModel, SchemaModel } from '../../services/models';
 
 import { PropertiesTable, PropertiesTableCaption } from '../../common-elements/fields-layout';
 import { Field } from '../Fields/Field';
@@ -10,6 +10,7 @@ import { SchemaProps } from './Schema';
 
 import { mapWithLast } from '../../utils';
 import { OptionsContext } from '../OptionsProvider';
+import { ProtobufOneof } from '../Fields/ProtobufOneof';
 
 export interface ObjectSchemaProps extends SchemaProps {
   discriminator?: {
@@ -18,20 +19,45 @@ export interface ObjectSchemaProps extends SchemaProps {
   };
 }
 
+const snakeToCamel = str =>
+  str
+    .toLowerCase()
+    .replace(/([-_][a-z])/g, group => group.toUpperCase().replace('-', '').replace('_', ''));
+
+class ProtobufOneofModel {
+  items: FieldModel[];
+}
+
 export const ObjectSchema = observer(
   ({
-    schema: { fields = [], title },
+    schema: { fields = [], title, protobufOneofSelector: protobufOneofSelectorSchema },
     showTitle,
     discriminator,
     skipReadOnly,
     skipWriteOnly,
     level,
+    protobufOneofSelector,
   }: ObjectSchemaProps) => {
     const { expandSingleSchemaField, showObjectSchemaExamples, schemaExpansionLevel } =
       React.useContext(OptionsContext);
 
-    const filteredFields = React.useMemo(
-      () =>
+    if (!protobufOneofSelector && protobufOneofSelectorSchema) {
+      protobufOneofSelector = protobufOneofSelectorSchema;
+    }
+    let currentProtobufOneofSelector;
+    let restProtobufOneofSelector;
+    if (protobufOneofSelector) {
+      const dot = protobufOneofSelector.indexOf('.');
+      if (dot != -1) {
+        currentProtobufOneofSelector = protobufOneofSelector.slice(0, dot);
+        restProtobufOneofSelector = protobufOneofSelector.slice(dot + 1);
+      } else {
+        currentProtobufOneofSelector = protobufOneofSelector;
+      }
+    }
+
+    const filteredFields = React.useMemo(() => {
+      const filteredSkipped =
         skipReadOnly || skipWriteOnly
           ? fields.filter(
               item =>
@@ -40,18 +66,78 @@ export const ObjectSchema = observer(
                   (skipWriteOnly && item.schema.writeOnly)
                 ),
             )
-          : fields,
-      [skipReadOnly, skipWriteOnly, fields],
-    );
+          : fields;
+      const filteredProtobufOneof: (FieldModel | ProtobufOneofModel)[] = [];
+      outer: for (const item of filteredSkipped) {
+        if (!item.schema.protobufOneof) {
+          filteredProtobufOneof.push(item);
+          continue;
+        }
+        for (const protobufOneof of filteredProtobufOneof) {
+          if (!(protobufOneof instanceof ProtobufOneofModel)) {
+            continue;
+          }
+          if (protobufOneof.items[0].schema.protobufOneof === item.schema.protobufOneof) {
+            if (currentProtobufOneofSelector) {
+              if (
+                snakeToCamel(protobufOneof.items[0].name) ==
+                snakeToCamel(currentProtobufOneofSelector)
+              ) {
+                // Skip field
+                continue outer;
+              }
+              if (snakeToCamel(item.name) == snakeToCamel(currentProtobufOneofSelector)) {
+                // Skip existing fields
+                protobufOneof.items = [item];
+                continue outer;
+              }
+            }
+            protobufOneof.items.push(item);
+            continue outer;
+          }
+        }
+        const newOneof = new ProtobufOneofModel();
+        newOneof.items = [item];
+        filteredProtobufOneof.push(newOneof);
+      }
+      return filteredProtobufOneof;
+    }, [skipReadOnly, skipWriteOnly, fields, currentProtobufOneofSelector]);
 
     const expandByDefault =
       (expandSingleSchemaField && filteredFields.length === 1) || schemaExpansionLevel >= level!;
+
+    let i = 0;
 
     return (
       <PropertiesTable>
         {showTitle && <PropertiesTableCaption>{title}</PropertiesTableCaption>}
         <tbody>
           {mapWithLast(filteredFields, (field, isLast) => {
+            if (field instanceof ProtobufOneofModel) {
+              // TODO:
+              // Pass more options to ProtobufOneof so it can pass them later to
+              // each field, like we can see below.
+              // However, some options might not be relevant:
+              // * renderDiscriminatorSwitch - we don't expect OAS discriminators in
+              //   transcoded gRPC APIs
+              // * expandByDefault - the oneof should always be expanded by default since the
+              //   fields are actually in the same nesting in the schema
+              // * showExamples?
+              // * The `key` prop must be supplied, but we don't have the original name of the oneof
+              //   field; so instead, we pass some integer.
+              return (
+                <ProtobufOneof
+                  key={'pb-oneof' + ++i}
+                  items={field.items}
+                  noSiblings={filteredFields.length === 1}
+                  isLast={isLast}
+                  level={level}
+                  skipReadOnly={skipReadOnly}
+                  skipWriteOnly={skipWriteOnly}
+                  showTitle={showTitle}
+                />
+              );
+            }
             return (
               <Field
                 key={field.name}
@@ -74,6 +160,11 @@ export const ObjectSchema = observer(
                 skipWriteOnly={skipWriteOnly}
                 showTitle={showTitle}
                 level={level}
+                protobufOneofSelector={
+                  snakeToCamel(field.name) === snakeToCamel(currentProtobufOneofSelector || '')
+                    ? restProtobufOneofSelector
+                    : undefined
+                }
               />
             );
           })}
