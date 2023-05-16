@@ -16,7 +16,7 @@ import { Field } from './Field';
 
 export interface ProtobufOneofProps {
   items: FieldModel[];
-  no_siblings?: boolean;
+  noSiblings?: boolean;
   level?: number;
   isLast?: boolean;
   skipReadOnly?: boolean;
@@ -27,8 +27,7 @@ export interface ProtobufOneofProps {
 @observer
 export class ProtobufOneof extends React.Component<ProtobufOneofProps> {
   render() {
-    const { items, no_siblings, isLast, level, skipReadOnly, skipWriteOnly, showTitle } =
-      this.props;
+    const { items, noSiblings, isLast, level, skipReadOnly, skipWriteOnly, showTitle } = this.props;
     if (items.length === 1) {
       // If oneof contains a single field, just inline it
       const field = items[0];
@@ -49,7 +48,7 @@ export class ProtobufOneof extends React.Component<ProtobufOneofProps> {
       <>
         <tr className={isLast ? 'last' : ''}>
           <ProtobufOneofCell colSpan={2} style={{ marginBottom: 0, paddingBottom: 0 }}>
-            {no_siblings || <PropertyBullet />}
+            {noSiblings || <PropertyBullet />}
             <span>
               <TypeName>One of</TypeName>
             </span>
